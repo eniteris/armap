@@ -6,7 +6,7 @@ import math
 import xml.etree.ElementTree as ET
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
-print(cv.__version__)
+#print(cv.__version__)
 
 files = os.listdir("data")
 fn = {}
@@ -131,9 +131,7 @@ coronet = {
 	213: (236,236,223)
 }
 
-ent_colors = [(255, 179, 0),(128, 62, 117),(255, 104, 0),(166, 189, 215),(193, 0, 32),(206, 162, 98),(129, 112, 102),(0, 125, 52),(246, 118, 142),(0, 83, 138),(255, 122, 92),(83, 55, 122),(255, 142, 0),(179, 40, 81),(244, 200, 0),(127, 24, 13),(147, 170, 0),(89, 51, 21),(241, 58, 19),(35, 44, 22),
-
-(255, 179, 0),(128, 62, 117),(255, 104, 0),(166, 189, 215),(193, 0, 32),(206, 162, 98),(129, 112, 102),(0, 125, 52),(246, 118, 142),(0, 83, 138),(255, 122, 92),(83, 55, 122),(255, 142, 0),(179, 40, 81),(244, 200, 0),(127, 24, 13),(147, 170, 0),(89, 51, 21),(241, 58, 19),(35, 44, 22)] #kelly_colors
+ent_colors = [(255, 179, 0),(128, 62, 117),(255, 104, 0),(166, 189, 215),(193, 0, 32),(206, 162, 98),(129, 112, 102),(0, 125, 52),(246, 118, 142),(0, 83, 138),(255, 122, 92),(83, 55, 122),(255, 142, 0),(179, 40, 81),(244, 200, 0),(127, 24, 13),(147, 170, 0),(89, 51, 21),(241, 58, 19),(35, 44, 22)]#kelly_colors
 
 color = coronet
 min_cities = 5
@@ -269,7 +267,7 @@ for l in lines:
 		pop = 0
 	elif(re.match("Outdoor",l)):
 		break
-	elif(flag == 1 and any(char.isdigit() for char in l)):
+	elif(flag == 1 and re.match("\d ",l)): #any(char.isdigit() for char in l)): #need to fix, change to regex \d
 		spl = l.split(" ")
 		n = int(spl[0].strip())
 		species = spl[1].strip()
@@ -370,6 +368,7 @@ for e in ents:
 		nents[e] = ents[e]
 ents = nents
 #print("There are "+str(len(ents))+" civilizations with more than "+str(min_cities)+" settlements")
+print(ents,civs)
 
 ents = {}
 for c in civs:
@@ -389,11 +388,14 @@ for e in d_hcoll:
 		if(a == b):
 			print(d_entities[str(a)].title(),"is embroiled in civil war in",d_hcoll[e]["name"].title())
 			continue
-		if(a in active_wars):
+		if(min(a,b) in active_wars):
 			active_wars[min((a,b))].append(max((a,b)))
 		else:
 			active_wars[min((a,b))] = [max((a,b))]
 		print(d_entities[str(min(a,b))].title(),"is at war with",d_entities[str(max(a,b))].title(),"in",d_hcoll[e]["name"].title())
+
+for key in active_wars:
+	active_wars[key] = set(active_wars[key])
 
 #ELEVATION
 img = cv.imread(fn["el"],cv.IMREAD_COLOR)
@@ -605,6 +607,9 @@ for i,terr in enumerate(terrs):
 
 	terr = cv.bitwise_and(terr,terr, mask = t[73])
 	terr_top = cv.bitwise_and(canv,canv,mask=terr)
+	if(i >= len(ent_colors)):
+		print("Error: Not enough colors in ent_colors")
+		i = i % len(ent_colors)
 	terr_overlay = np.ones(img.shape,dtype="uint8")*[ent_colors[i][2],ent_colors[i][1],ent_colors[i][0]]
 	terr_overlay = cv.bitwise_and(terr_overlay,terr_overlay,mask=terr).astype(np.uint8)
 
@@ -625,7 +630,7 @@ for i,terr in enumerate(terrs):
 	diag = np.zeros(veg.shape,dtype="uint8")
 	for d in range(0,2*maxx,len(disp)*(diag_width+diag_space)):
 			cv.line(diag,(maxy,d-maxx+i*(diag_width+diag_space)),(0,d+i*(diag_width+diag_space)),(255),diag_width)
-			
+	
 	for j,uerr in enumerate(disp):
 		c2 = int(list(ents)[j])
 		m = 0
@@ -633,6 +638,8 @@ for i,terr in enumerate(terrs):
 			inter = cv.bitwise_and(disp[i],disp[j])
 			m = cv.countNonZero(inter)
 		if(m > 0):
+			if(i >= len(ent_colors)):
+				i = i % len(ent_colors)
 			overlay = np.ones(img.shape,dtype="uint8")*[ent_colors[i][2],ent_colors[i][1],ent_colors[i][0]]
 			mask = cv.bitwise_and(inter,diag)
 			overlay = cv.bitwise_and(overlay,overlay,mask=mask).astype(np.uint8)
@@ -640,6 +647,9 @@ for i,terr in enumerate(terrs):
 			eiag = np.zeros(veg.shape,dtype="uint8")
 			for d in range(0,2*maxx,len(terrs)*(diag_width+diag_space)):
 				cv.line(eiag,(maxy,d-maxx+j*(diag_width+diag_space)),(0,d+j*(diag_width+diag_space)),(255),diag_width)
+			
+			if(j >= len(ent_colors)):
+				j = j % len(ent_colors)
 
 			everlay = np.ones(img.shape,dtype="uint8")*[ent_colors[j][2],ent_colors[j][1],ent_colors[j][0]]
 			emask = cv.bitwise_and(inter,eiag)
@@ -673,6 +683,9 @@ for i,terr in enumerate(terrs):
 			edges = cv.subtract(edges,uerr)
 
 	edges = cv.bitwise_and(edges,edges,mask=t[73])
+
+	if(i >= len(ent_colors)):
+		i = i % len(ent_colors)
 
 	overlay = np.ones(img.shape,dtype="uint8")*[ent_colors[i][2],ent_colors[i][1],ent_colors[i][0]]
 	overlay = cv.bitwise_and(overlay,overlay,mask=edges).astype(np.uint8)
