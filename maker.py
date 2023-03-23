@@ -10,11 +10,11 @@ from PIL import Image, ImageDraw, ImageFont, ImageFilter
 #%%COLORS
 shadowfox = {
   0: (  0, 30, 80),#   0.000%,
-  2: (  0, 51,102),#  11.110%,
-  5: (  0,102,153),#  22.220%,
-  7: (  0,153,205),#  33.330%,
-  9: (100,200,255),#  38.890%,
-  10: (198,236,255),#  42.220%,
+  14: (  0, 51,102),#  11.110%,
+  35: (  0,102,153),#  22.220%,
+  79: (  0,153,205),#  33.330%,
+  63: (100,200,255),#  38.890%,
+  72: (198,236,255),#  42.220%,
   
   73: (148,171,132),#  44.440%,
   76: (172,191,139),#  45.560%,
@@ -27,10 +27,10 @@ shadowfox = {
 			}
 meyers = {
   0: ( 91,140,164),#   0.000%,
-  3: (120,164,183),#  20.000%,
-  6: (128,173,193),#  40.000%,
-  8: (146,182,195),#  50.000%,
-  10: (200,219,225),#  58.000%,
+  21: (120,164,183),#  20.000%,
+  42: (128,173,193),#  40.000%,
+  54: (146,182,195),#  50.000%,
+  72: (200,219,225),#  58.000%,
   
   73: (178,202,153),#  60.000%,
   82: (215,224,199),#  62.000%,
@@ -42,10 +42,10 @@ meyers = {
 
 nordisk = {
   0: (108,139,141),#   0.000%,
-  2: (129,159,144),#  16.670%,
-  5: (169,182,162),#  33.330%,
-  7: (192,198,173),#  50.000%,
-  10: (230,221,204),#  65.000%,
+  14: (129,159,144),#  16.670%,
+  35: (169,182,162),#  33.330%,
+  49: (192,198,173),#  50.000%,
+  72: (230,221,204),#  65.000%,
   
   73: (188,187,128),#  66.670%,
   82: (207,199,153),#  68.330%,
@@ -57,7 +57,7 @@ nordisk = {
 
 schwarzwald = {
   0:(100,200,255),
-  
+  72:(100,200,255),
   73: (176,243,190),#   0.000,
   85: (224,251,178),#   6.670%,
   97: (184,222,118),#  13.330%,
@@ -77,15 +77,15 @@ schwarzwald = {
 
 carte = {
 	0: (113,171,216),
-	1: (121,178,222),
-	2: (132,185,227),
-	3: (141,193,234),
-	4: (150,201,240),
-	5: (161,210,247),
-	6: (172,219,251),
-	7: (185,227,255),
-	8: (198,236,255),
-	10: (216,252,254),
+	7: (121,178,222),
+	14: (132,185,227),
+	21: (141,193,234),
+	28: (150,201,240),
+	35: (161,210,247),
+	42: (172,219,251),
+	49: (185,227,255),
+	54: (198,236,255),
+	72: (216,252,254),
 	
 	73: (172,208,165),
 	83: (148,191,139),
@@ -110,69 +110,165 @@ carte = {
 
 coronet = {
     #0: (95,139,125),
-	0: (43, 84, 108),
-	#1: (53, 97, 112),
-	#2: (58, 103, 114),
-	#3: (61, 106, 116),
-	#4: (63, 109, 116),
-	5: (66, 112, 117),
-	#6: (68, 115, 118),
-	#7: (73, 121, 120),
-    #8: (78, 127, 122),
-	10: (83, 133, 123),
-	73: (155,144,121),
-	83: (165,158,136),
-	93: (172,165,145),
-	103: (171,164,145),
-	113: (171,164,145),
-	123: (160,155,135),
-	133: (165,163,144),
-	143: (168,163,144),
-	153: (159,154,135),
-	163: (159,155,135),
-	173: (154,148,127),
-	183: (157,152,128),
-	193: (236,235,220),
-	203: (231,229,217),
-	213: (236,236,223)
+    0: (43, 84, 108),
+    7: (53, 97, 112),
+    14: (58, 103, 114),
+    21: (61, 106, 116),
+    28: (63, 109, 116),
+    35: (66, 112, 117),
+    42: (68, 115, 118),
+    49: (73, 121, 120),
+    54: (78, 127, 122),
+    72: (83, 133, 123),
+    73: (155,144,121),
+    83: (165,158,136),
+    93: (172,165,145),
+    103: (171,164,145),
+    113: (171,164,145),
+    123: (160,155,135),
+    133: (165,163,144),
+    143: (168,163,144),
+    153: (159,154,135),
+    163: (159,155,135),
+    173: (154,148,127),
+    183: (157,152,128),
+    193: (236,235,220),
+    203: (231,229,217),
+    213: (236,236,223)
 }
+
+extra = {
+            0: (20, 48, 102),
+            1: (20, 49, 102),
+            2: (20, 50, 103),
+            3: (20, 51, 103),
+            4: (20, 52, 103),
+            5: (20, 54, 104),
+            6: (20, 55, 104),
+            7: (20, 56, 105),
+            8: (21, 57, 105),
+            9: (21, 58, 105),
+            10: (21, 59, 106),
+            11: (21, 60, 106),
+            12: (21, 61, 106),
+            13: (21, 62, 107),
+            14: (21, 64, 107),
+            15: (21, 65, 107),
+            16: (21, 66, 108),
+            17: (21, 67, 108),
+            18: (21, 68, 109),
+            19: (21, 69, 109),
+            20: (21, 70, 109),
+            21: (21, 71, 110),
+            22: (22, 72, 110),
+            23: (22, 74, 110),
+            24: (22, 75, 111),
+            25: (22, 76, 111),
+            26: (22, 77, 111),
+            27: (22, 78, 112),
+            28: (22, 79, 112),
+            29: (22, 80, 112),
+            30: (22, 81, 113),
+            31: (22, 82, 113),
+            32: (22, 84, 114),
+            33: (22, 85, 114),
+            34: (22, 86, 114),
+            35: (22, 87, 115),
+            36: (23, 88, 115),
+            37: (23, 89, 115),
+            38: (23, 90, 116),
+            39: (23, 91, 116),
+            40: (23, 92, 116),
+            41: (23, 94, 117),
+            42: (23, 95, 117),
+            43: (23, 96, 118),
+            44: (23, 97, 118),
+            45: (23, 98, 118),
+            46: (23, 99, 119),
+            47: (23, 100, 119),
+            48: (23, 101, 119),
+            49: (23, 102, 120),
+            50: (23, 104, 120),
+            51: (24, 105, 120),
+            52: (24, 106, 121),
+            53: (24, 107, 121),
+            54: (24, 108, 122),
+            55: (24, 109, 122),
+            56: (24, 110, 122),
+            57: (24, 111, 123),
+            58: (24, 112, 123),
+            59: (24, 114, 123),
+            60: (24, 115, 124),
+            61: (24, 116, 124),
+            62: (24, 117, 124),
+            63: (24, 118, 125),
+            64: (24, 119, 125),
+            65: (25, 120, 125),
+            66: (25, 121, 126),
+            67: (25, 122, 126),
+            68: (25, 124, 127),
+            69: (25, 125, 127),
+            70: (25, 126, 127),
+            71: (25, 127, 128),
+            72: (25, 128, 128),
+            73: (55, 37, 27),
+            83: (61, 41, 30),
+            93: (67, 45, 33),
+            103: (74, 49, 36),
+            113: (81, 54, 40),
+            123: (89, 59, 44),
+            133: (105, 80, 60),
+            143: (113, 91, 68),
+            153: (121, 101, 76),
+            163: (129, 112, 84),
+            173: (137, 122, 92),
+            183: (153, 142, 107),
+            193: (236,235,220),
+            203: (231,229,217),
+            213: (236,236,223)
+        }       
+
 
 ent_colors = [(255, 179, 0),(128, 62, 117),(255, 104, 0),(166, 189, 215),(193, 0, 32),(206, 162, 98),(129, 112, 102),(0, 125, 52),(246, 118, 142),(0, 83, 138),(255, 122, 92),(83, 55, 122),(255, 142, 0),(179, 40, 81),(244, 200, 0),(127, 24, 13),(147, 170, 0),(89, 51, 21),(241, 58, 19),(35, 44, 22)]#kelly_colors
 
 
 palette_dict =  {
-                    # "shadowfox" : shadowfox,
-                    # "meyers" : meyers,
-                    # "nordisk" : nordisk,
-                    # "schwarzwald" : schwarzwald,
-                    # "carte" : carte,
-                    "coronet" : coronet
+                    "shadowfox" : shadowfox,
+                    "meyers" : meyers,
+                    "nordisk" : nordisk,
+                    "schwarzwald" : schwarzwald,
+                    "carte" : carte,
+                    "coronet" : coronet,
+                    "extra" : extra
                 }
 
-palette_choice = "coronet"
-color = palette_dict[palette_choice]
+# palette_choice = "coronet"
+#color = palette_dict[palette_choice]
     
 
 
-#%%FONTS/MISC
+#%%OPTIONS
 min_cities = 5
 mandatory_cities = []#["leafscourge","cloudystable","snarlyelled","basiclie","menacethieves","entryamused","relicrift","raptorcrown","basisgoal","blazesmobs","pearlwire","boardplan"] #in english
 
 sea_level_color = (44,64,75)
-topology_color = (88,127,150)
-bathy_color = (color[0][2]*0.9,color[0][1]*0.9,color[0][0]*0.9)
+#topology_color = (88,127,150) #The topology lines
+topology_color = (57,62,71) #The topology lines
+#bathy_color = (color[0][2]*0.9,color[0][1]*0.9,color[0][0]*0.9,128)
 
 #vill_color = (64,64,64)
 ag_color = (64,85,64)
 path_color = (64,64,64)
 
 glac_alpha = 0.7
-veg_green = 0.8
-veg_alpha = 0.3
+desert_alpha = 1
+veg_green = .8
+veg_alpha = 1
 terr_alpha = 0.3
 vill_alpha = 0.3
 ag_alpha = 0.1
 glow_alpha = 0.7
+topology_alpha = 0.5
 
 big_point = 3
 med_point = 2
@@ -202,9 +298,12 @@ process_road = True
 
 mand_pop = 1000
 mandatory_cities = [x.lower() for x in mandatory_cities]
+
+
+ice_bgr = [255,255,255]
+desert_bgr = [175,201,237]
 #print(cv.__version__)
 
-#%%OPTIONS
 
 # grid_check = input("Draw grid?")
 
@@ -213,18 +312,36 @@ mandatory_cities = [x.lower() for x in mandatory_cities]
 # else:
 #     grid_draw = False
 
-grid_draw = True
+#%%%GEN FUNCTION FLAGS
+grid_draw = False
+site_check = False
+territory_check = False
+structure_check = False
+other_labels_check = False
+world_label_check = False
+veg_type = "Green"
 
-site_check = True
-territory_check = True
-structure_check = True
-other_labels_check = True
 
+
+#%%FUNCTIONS
+
+def test_image(img):      
+    img = Image.fromarray(img[:,:,::-1])
+    img = img.convert("RGBA")
+    img.show()
+    cv.waitKey(0)
+    
+def blue_conversion(img):
+    idx = img[:, :, 2] == 0
+    grey_value = img[idx, 0] * .73
+    img[idx, 0] = grey_value
+    img[idx, 1] = grey_value
+    img[idx, 2] = grey_value
+    
+    return img
 
 
 #%%GENERATION BEGIN
-
-
 
 root_path = "Map Data/"
 folders = os.listdir(root_path)
@@ -236,7 +353,6 @@ if folders == []:
     print("No map data folders present.")
 
 #%%%FILES
-
 for folder in folders:
     print("Beginning generation of "+folder)
     file_path = root_path + folder + "/"
@@ -318,10 +434,10 @@ for folder in folders:
     	i+=1
     f1.close()
     
-    for choice in palette_dict:
-        color = palette_dict[choice]
+    for palette in palette_dict:
+        color = palette_dict[palette]
         bathy_color = (color[0][2]*0.9,color[0][1]*0.9,color[0][0]*0.9)
-        
+        print(f"Beginning {palette} map generation")
         
         
         #%%%SITES
@@ -470,33 +586,88 @@ for folder in folders:
              	active_wars[key] = set(active_wars[key])
         
         #%%%ELEVATION
+        yx = (1131,1524)
         print("Drawing elevation...")
-        img = cv.imread(fn["el"],cv.IMREAD_COLOR)
-        grey = np.uint8(cv.cvtColor(img, cv.COLOR_BGR2GRAY))
+        elevation = cv.imread(fn["el"],cv.IMREAD_COLOR)
+        elevation = blue_conversion(elevation)
+        
+        grey = np.uint8(cv.cvtColor(elevation, cv.COLOR_BGR2GRAY))
+
         #print("Elevation ranges from",np.amin(grey),"to",np.amax(grey))
-        canv = np.ones(grey.shape,np.uint8)
+        canv = np.ones(grey.shape,np.uint8)       
         canv = cv.merge([canv*color[0][2],canv*color[0][1],canv*color[0][0]])
         
         t = []
         kernel = np.ones((3, 3), 'uint8')
         for i in range(256):
-        	ret,thresh = cv.threshold(grey,i,255,cv.THRESH_BINARY)
-        	thresh = cv.erode(thresh, kernel, iterations=1)
-        	thresh = cv.dilate(thresh, kernel, iterations=1)
-        	t.append(thresh)
-        	
-        	if(i in color.keys()):
-        		col = color[i]
-        		canv = cv.bitwise_and(canv,canv,mask = cv.bitwise_not(thresh))
-        		cols = cv.merge([thresh/255*col[2],thresh/255*col[1],thresh/255*col[0]])
-        		canv = cv.add(canv,np.uint8(cols))
-        
-        
+            ret,thresh = cv.threshold(grey,i,255,cv.THRESH_BINARY)
+            thresh = cv.erode(thresh, kernel, iterations=1)
+            thresh = cv.dilate(thresh, kernel, iterations=1)
+            t.append(thresh)
+           
+            if(i in color.keys()):
+                col = color[i]
+                canv = cv.bitwise_and(canv,canv,mask = cv.bitwise_not(thresh))
+                cols = cv.merge([thresh/255*col[2],thresh/255*col[1],thresh/255*col[0]])
+                canv = cv.add(canv,np.uint8(cols))
+        #%%%CONTOURS
+        print("Drawing topology...")
+        for i,x in color.items():
+            if(i == 0): continue
+            contours, hierarchy = cv.findContours(t[i], cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+            contour_canv = canv.copy()
+            if(i < 73): 
+                col = bathy_color
+            elif(i == 73):
+                col = sea_level_color
+                cv.drawContours(canv, contours, -1, col, 1)
+                #canv = cv.addWeighted(canv,1-topology_alpha,contour_canv,topology_alpha,0)
+            elif(i < 123):
+                col = topology_color
+                cv.drawContours(canv, contours, -1, col, 1)
+                #canv = cv.addWeighted(canv,1-topology_alpha,contour_canv,topology_alpha,0)
+            elif(i >= 123):
+                col = topology_color
+                cv.drawContours(canv, contours, -1, col, 1)
+                #canv = cv.addWeighted(canv,1-topology_alpha,contour_canv,topology_alpha,0)
+            # cv.drawContours(canv, contours, -1, col, 1)
+            #img2 = grey.copy() 
         #%%%VEGETATION
+        
         print("Drawing vegetation...")
         veg = cv.imread(fn["veg"],cv.IMREAD_GRAYSCALE)
         ret,veg_mask = cv.threshold(veg,1,255,cv.THRESH_BINARY)
-        veg_overlay = cv.merge([np.uint8(veg*(1-veg_green)),np.uint8(veg*veg_green),np.uint8(veg*(1-veg_green))])
+        
+        if veg_type == "Green":
+            # veg_overlay = cv.merge(
+            #                             [
+            #                                 np.uint8(
+            #                                             (-0.5176*veg)+132
+            #                                         ),
+            #                                 np.uint8(
+            #                                             (-0.4118*veg)+180
+            #                                         ),
+            #                                 np.uint8(
+            #                                             (-0.6980*veg)+178
+            #                                         )
+            #                             ]
+            #                         )
+            veg_overlay = cv.merge(
+                                        [
+                                            np.uint8(
+                                                        (-0.4549*veg)+116
+                                                    ),
+                                            np.uint8(
+                                                        (-0.3804*veg)+172
+                                                    ),
+                                            np.uint8(
+                                                        (-0.6118*veg)+156
+                                                    )
+                                        ]
+                                    )
+            veg_overlay = cv.bitwise_and(veg_overlay,veg_overlay,mask=veg)
+        else:
+            veg_overlay = cv.merge([np.uint8(veg*(1-veg_green)),np.uint8(veg*veg_green),np.uint8(veg*(1-veg_green))])
         #veg_overlay = cv.blur(veg_overlay,(3,3))
         veg_top = cv.bitwise_and(canv,canv,mask=veg)
         veg_top = cv.addWeighted(veg_top,1-veg_alpha,veg_overlay,veg_alpha,0)
@@ -509,27 +680,30 @@ for folder in folders:
         
         (maxx,maxy) = veg.shape
         
-        #%%%CONTOURS
-        print("Drawing topology...")
-        for i,x in color.items():
-        	if(i == 0): continue
-        	contours, hierarchy = cv.findContours(t[i], cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-        	if(i < 73): 
-        		col = bathy_color
-        	elif(i == 73):
-        		col = sea_level_color
-        	else:
-        		col = topology_color
-        	#img2 = grey.copy()
-        	cv.drawContours(canv, contours, -1, col, 1)
+        #%%%DESERT
+        print("Drawing deserts...")
+        biome = cv.imread(fn["bm"],cv.IMREAD_COLOR)
+        desert = np.zeros(biome.shape, dtype="uint8")
+        desert[np.where((biome==[32,96,255]).all(axis=2))] = [108,107,94]       #Badland desert
+        desert[np.where((biome==[0,255,255]).all(axis=2))] = [82,142,206]       #Sand desert
+        desert[np.where((biome==[64,128,255]).all(axis=2))] = [108,107,94]      #Rock desert
+        
+        dmask = np.uint8(cv.cvtColor(desert, cv.COLOR_BGR2GRAY))
+        dmask[np.where(dmask != 0)] = 255
+        desert_top = cv.bitwise_and(canv,canv,mask=dmask)
+        desert_top = cv.addWeighted(desert_top,1-desert_alpha,desert,desert_alpha,0)
+
+
+        canv = cv.bitwise_and(canv,canv,mask=cv.bitwise_not(dmask))
+        canv = cv.add(canv,desert_top)
         
         #%%%ICE
         print("Drawing glaciers...")
-        ice = cv.imread(fn["bm"],cv.IMREAD_COLOR)
-        glacier = np.zeros(ice.shape, dtype="uint8")
-        glacier[np.where((ice==[255,255,0]).all(axis=2))] = [255,255,255]
-        
-        
+        biome = cv.imread(fn["bm"],cv.IMREAD_COLOR)
+        glacier = np.zeros(biome.shape, dtype="uint8")
+        glacier[np.where((biome==[255,255,0]).all(axis=2))] = [255,255,255]
+        glacier[np.where((biome==[255,255,64]).all(axis=2))] = [255,255,255]
+        glacier[np.where((biome==[255,255,128]).all(axis=2))] = [255,255,255]
         #glacier = cv.dilate(glacier, kernel, iterations=1)
         #[247,253,254]
         
@@ -543,12 +717,13 @@ for folder in folders:
         #cv.imshow("dd",canv)
         #cv.waitKey(1)
         
+
         #%%%WATER
         print("Drawing water...")
         water = cv.imread(fn["hyd"],cv.IMREAD_COLOR)
-        
+
         rivers = np.zeros(veg.shape, dtype="uint8")
-        rivers[np.where((water==[255,96,0]).all(axis=2))] = [255]	#lake
+        rivers[np.where((water==[255,96,0]).all(axis=2))] = [255]	  #lake
         rivers[np.where((water==[255,112,0]).all(axis=2))] = [255]	#ocean river
         rivers[np.where((water==[255,128,0]).all(axis=2))] = [255]	#major river
         rivers[np.where((water==[255,160,0]).all(axis=2))] = [255]	#river
@@ -560,10 +735,11 @@ for folder in folders:
         ret,riv_mask = cv.threshold(rivers,1,255,cv.THRESH_BINARY)
         canv = cv.bitwise_and(canv,canv,mask=cv.bitwise_not(riv_mask))
         
-        col = color[0]
+        col = color[72]
         rivers = cv.merge([riv_mask/255*col[2],riv_mask/255*col[1],riv_mask/255*col[0]])
         canv = cv.add(np.uint8(canv),np.uint8(rivers))
-        
+
+   
         #%%% TERRITORY
         if territory_check:
             print("Drawing territories...")
@@ -571,7 +747,7 @@ for folder in folders:
             k = cv.getStructuringElement(cv.MORPH_ELLIPSE,(15,15))
             
             #VORONOI TERRITORY 2 ELECTRIC BOOGALGOO
-            delauny = np.zeros(img.shape, dtype="uint8")
+            delauny = np.zeros(elevation.shape, dtype="uint8")
             pts = []
             rulers = []
             for s in occ_sites:#d_sites:
@@ -686,7 +862,7 @@ for folder in folders:
              	if(i >= len(ent_colors)):
              		print("Error: Not enough colors in ent_colors")
              		i = i % len(ent_colors)
-             	terr_overlay = np.ones(img.shape,dtype="uint8")*[ent_colors[i][2],ent_colors[i][1],ent_colors[i][0]]
+             	terr_overlay = np.ones(elevation.shape,dtype="uint8")*[ent_colors[i][2],ent_colors[i][1],ent_colors[i][0]]
              	terr_overlay = cv.bitwise_and(terr_overlay,terr_overlay,mask=terr).astype(np.uint8)
             
              	terr_top = cv.addWeighted(terr_top,1-terr_alpha,terr_overlay,terr_alpha,0)
@@ -698,7 +874,7 @@ for folder in folders:
             diag_width = 1
             diag_space = 0
             
-            outerlay = np.zeros(img.shape,dtype="uint8")
+            outerlay = np.zeros(elevation.shape,dtype="uint8")
             outermask = np.zeros(veg.shape,dtype="uint8")
             for i,terr in enumerate(terrs):
              	c1 = int(list(ents)[i])
@@ -716,7 +892,7 @@ for folder in folders:
              		if(m > 0):
              			if(i >= len(ent_colors)):
              				i = i % len(ent_colors)
-             			overlay = np.ones(img.shape,dtype="uint8")*[ent_colors[i][2],ent_colors[i][1],ent_colors[i][0]]
+             			overlay = np.ones(elevation.shape,dtype="uint8")*[ent_colors[i][2],ent_colors[i][1],ent_colors[i][0]]
              			mask = cv.bitwise_and(inter,diag)
              			overlay = cv.bitwise_and(overlay,overlay,mask=mask).astype(np.uint8)
             				
@@ -727,7 +903,7 @@ for folder in folders:
              			if(j >= len(ent_colors)):
              				j = j % len(ent_colors)
             
-             			everlay = np.ones(img.shape,dtype="uint8")*[ent_colors[j][2],ent_colors[j][1],ent_colors[j][0]]
+             			everlay = np.ones(elevation.shape,dtype="uint8")*[ent_colors[j][2],ent_colors[j][1],ent_colors[j][0]]
              			emask = cv.bitwise_and(inter,eiag)
              			everlay = cv.bitwise_and(everlay,everlay,mask=emask).astype(np.uint8)
              			
@@ -763,12 +939,12 @@ for folder in folders:
              	if(i >= len(ent_colors)):
              		i = i % len(ent_colors)
             
-             	overlay = np.ones(img.shape,dtype="uint8")*[ent_colors[i][2],ent_colors[i][1],ent_colors[i][0]]
+             	overlay = np.ones(elevation.shape,dtype="uint8")*[ent_colors[i][2],ent_colors[i][1],ent_colors[i][0]]
              	overlay = cv.bitwise_and(overlay,overlay,mask=edges).astype(np.uint8)
              	canv = cv.bitwise_and(canv,canv,mask=cv.bitwise_not(edges))
              	canv = cv.add(canv,overlay)
              	
-             	#vp = cv.dilate(vp, kernel, iterations=1)
+            #vp = cv.dilate(vp, kernel, iterations=1)
             #	vcont, hierarchy = cv.findContours(vp, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
             #	cv.drawContours(canv, vcont, -1, (0,0,0), 1, cv.LINE_4)
             #	cv.imshow("d",canv)
@@ -1002,8 +1178,8 @@ for folder in folders:
         if grid_draw:
             print("Drawing grid...")
             size = len(canv)
-            grid_spacing = 128
-            grid_width = 2
+            grid_spacing = 43
+            grid_width = 1
             grid_color = [200,200,200]
             grid_offset = 5
             grid_alpha = .7
@@ -1024,8 +1200,6 @@ for folder in folders:
         im = Image.fromarray(canv[:,:,::-1])
         im = im.convert("RGBA")
         overlap = np.zeros(veg.shape, dtype="uint8")
-        
-        
         
         if other_labels_check:
             ###############################
@@ -1202,8 +1376,8 @@ for folder in folders:
         im.show()
         print("Saving to file...")
         output_path = "Maps/"
-        im.save(output_path+worldtransname+" - "+choice+".png")
-        print(f"{choice} map generated.")
+        im.save(f"{output_path}{worldtransname} - {palette}.png")
+        print(f"{palette} map generated.")
         print("---------------------------")
     print(f"All maps generated for {worldtransname}")
     print("---------------------------")
@@ -1313,4 +1487,5 @@ for s in d_sites:
 #print("Saving to file...")
 #cv.imwrite("map.png",canv)
 print("Done!")
+#input("Press any key to exit\n")
 cv.waitKey(0)
