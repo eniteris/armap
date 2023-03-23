@@ -1199,7 +1199,7 @@ function export_armaps()
                      for j = 1, #MAPS do
                         if MAPS[j] == chosen_map then
                             vs.sel_type = j - 1
-                            print(j-1)
+                            print(vs)
                         end
                     end
                     -- Move into the save folder
