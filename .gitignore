@@ -1,0 +1,14 @@
+# Ignore everything
+*
+
+# Except that we want included
+!.gitignore
+!requirements.txt
+!README.md
+!LICENSE
+!**.py
+!**.lua
+!resources/
+!resources/**
+!examples/
+!examples/**
