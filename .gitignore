@@ -3,6 +3,7 @@
 
 # Except that we want included
 !.gitignore
+!.pylintrc
 !requirements.txt
 !README.md
 !LICENSE

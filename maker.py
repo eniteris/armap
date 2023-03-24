@@ -2,10 +2,10 @@ import os
 import re
 import math
 import argparse
+import xml.etree.ElementTree as ET
 
 import cv2 as cv
 import numpy as np
-import xml.etree.ElementTree as ET
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
 
@@ -275,7 +275,22 @@ palette_dict =  {
 # palette_choice = "coronet"
 # color = palette_dict[palette_choice]
 
-mandatory_cities = []#["leafscourge","cloudystable","snarlyelled","basiclie","menacethieves","entryamused","relicrift","raptorcrown","basisgoal","blazesmobs","pearlwire","boardplan"] #in english
+mandatory_cities = []
+# Example of cities in english
+# mandatory_cities = [
+#    "leafscourge",
+#    "cloudystable",
+#    "snarlyelled",
+#    "basiclie",
+#    "menacethieves",
+#    "entryamused",
+#    "relicrift",
+#    "raptorcrown",
+#    "basisgoal",
+#    "blazesmobs",
+#    "pearlwire",
+#    "boardplan"
+# ]
 
 sea_level_color = (44,64,75)
 #topology_color = (88,127,150) #The topology lines
