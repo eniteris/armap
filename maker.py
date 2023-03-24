@@ -7,6 +7,8 @@ import xml.etree.ElementTree as ET
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
 
+DEFAULT_FONT = "resources/DF-Curses-8x12.ttf"
+
 #%%COLORS
 shadowfox = {
   0: (  0, 30, 80),#   0.000%,
@@ -281,10 +283,10 @@ title_size = 300
 subtitle_size = 100
 font_size = 20
 sub_size = 14
-titlefont = ImageFont.truetype("DF_Curses_8x12.ttf", title_size)
-subtitlefont = ImageFont.truetype("DF_Curses_8x12.ttf", subtitle_size)
-font = ImageFont.truetype("DF_Curses_8x12.ttf", font_size)
-subfont = ImageFont.truetype("DF_Curses_8x12.ttf", sub_size)
+titlefont = ImageFont.truetype(DEFAULT_FONT, title_size)
+subtitlefont = ImageFont.truetype(DEFAULT_FONT, subtitle_size)
+font = ImageFont.truetype(DEFAULT_FONT, font_size)
+subfont = ImageFont.truetype(DEFAULT_FONT, sub_size)
 
 text_offset = (10,5)
 titleadjust = (20,10)
