@@ -386,34 +386,43 @@ def scan_folder(folder_path):
     """
     Receives a folder path to scan and parse the files inside
     """
+
+    if folder_path[-1] != "/":
+        folder_path = folder_path + "/"
+
     files = os.listdir(folder_path)
 
-    fn = {}
+    layer_files = {}
 
-    for f in files:
-        if(".bmp" in f):
-            m = re.search("([^-]*)\.bmp", f)
-            if(m):
-                fn[m.group(1)] = folder_path + f
-        if(".xml" in f):
-            flegends = folder_path + f
-        if("pops.txt" in f):
-            pops = folder_path + f
-        if("world_history.txt" in f):
-            wh = folder_path + f
-    
-    tree = ET.parse(flegends)
-    root = tree.getroot()
+    for file in files:
+        if ".bmp" in file:
+            match = re.search(r"([^-]*)\.bmp", file)
+            if match:
+                layer_files[match.group(1)] = folder_path + file
+        elif "legends.xml" in file:
+            legends_file = folder_path + file
+        elif "pops.txt" in file:
+            pops_file = folder_path + file
+        elif "world_history.txt" in file:
+            world_history_file = folder_path + file
 
-    ro = {}
-    for i,child in enumerate(root):
-        if(child.tag in ["regions", "sites", "entities", "historical_events", "historical_event_collections"]):
-            ro[child.tag] = root[i]
+    tree = ET.ElementTree(legends_file)
 
-    return fn, ro, pops, wh
+    legends = {
+        "regions": tree.find("regions"),
+        "sites": tree.find("sites"),
+        "entities": tree.find("entities"),
+        "historical_events": tree.find("historical_events"),
+        "historical_event_collections": tree.find("historical_event_collections")
+    }
+
+    return layer_files, legends, pops_file, world_history_file
 
 
 def parse_regions(regions):
+    """
+    Parse each region to create a dictonary
+    """
     d_regions = {}
     for child in regions:
         d_regions[child[0].text] = {
