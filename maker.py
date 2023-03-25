@@ -1,9 +1,10 @@
-import os
+from os import listdir
 import re
 import argparse
 from configparser import ConfigParser
 import math
 import xml.etree.ElementTree as ET
+import gc
 
 import cv2 as cv
 import numpy as np
@@ -18,22 +19,11 @@ DESCRIPTION='Automated map maker from Dwarf Fortress maps'
 
 
 SETTINGS = {
-    "min_cities": 5 
+    "min_cities": 5
 }
 
-palette_dict =  {}
-color_palettes = os.listdir(COLORS_FOLDER)
-for c in color_palettes:
-    color_config = ConfigParser()
-    color_config.read(COLORS_FOLDER + c)
-    color_values = dict(color_config["COLORS"])
-    for k, v in color_values.items():
-        value = tuple(int(v.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
-        color_values.update({k: value})
-    palette_dict[color_config["META"]["name"]] = color_values
 
-
-ent_colors = [
+entity_colors = [
     (255, 179, 0),
     (128, 62, 117),
     (255, 104, 0),
@@ -105,7 +95,7 @@ ice_bgr = [255,255,255]
 desert_bgr = [175,201,237]
 
 grid_draw = False
-site_check = False
+site_check = True
 territory_check = False
 structure_check = False
 other_labels_check = False
@@ -135,6 +125,23 @@ def blue_conversion(img):
     return img
 
 
+def read_colors(folder=COLORS_FOLDER):
+    """
+    Read the colors from a folder
+    """
+    palette_dict =  {}
+    color_palettes = listdir(folder)
+    for c in color_palettes:
+        color_config = ConfigParser()
+        color_config.read(folder + c)
+        color_values = {}
+        for k, v in dict(color_config["COLORS"]).items():
+            value = tuple(int(v.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
+            color_values.update({int(k): value})
+        palette_dict[color_config["META"]["name"]] = color_values
+    return palette_dict
+
+
 def scan_folder(folder_path):
     """
     Receives a folder path to scan and parse the files inside
@@ -143,7 +150,7 @@ def scan_folder(folder_path):
     if folder_path[-1] != "/":
         folder_path += "/"
 
-    files = os.listdir(folder_path)
+    files = listdir(folder_path)
 
     maps = {}
     legends = None
@@ -162,7 +169,7 @@ def scan_folder(folder_path):
         elif "world_history.txt" in file:
             world_history = folder_path + file
 
-    if maps:
+    if not maps:
         print("Could not locate any maps file")
         raise Exception()
     elif not legends:
@@ -250,12 +257,12 @@ def parse_collections(collections):
     return d_collections
 
 
-def generate(folder):
-    """
-    General function to generate maps
-    """
 
-    print("Beginning generation of " + folder)
+def generate_parameters(folder):
+    """
+    Function to parse legends and generate parameters
+    """
+    print("Beginning parsing of " + folder)
     folder_path = ROOT_PATH + folder
 
     print("Parsing files...")
@@ -304,14 +311,17 @@ def generate(folder):
                 elif civ and civ_id:
                     d_sites[civ_id]["ruler"] = list(
                         d_entities.keys()
-                        )[list(d_entities.values()).index(civ.group(1))]
-                    d_sites[civ_id]["ruler_name"] = civ.group(1)
-                    d_sites[civ_id]["ruler_race"] = civ.group(2)
+                        )[list(d_entities.values()).index(civ.group(1).lower())]
+                    d_sites[civ_id]["civ_name"] = civ.group(1)
+                    d_sites[civ_id]["civ_race"] = civ.group(2)
                 elif parent and civ_id:
+                    d_sites[civ_id]["ruler"] = list(
+                        d_entities.keys()
+                        )[list(d_entities.values()).index(parent.group(1).lower())]
                     d_sites[civ_id]["parent_name"] = parent.group(1)
                     d_sites[civ_id]["parent_race"] = parent.group(2)
                 elif pop and civ_id:
-                    d_sites[civ_id]["pop"] += pop.group(1)
+                    d_sites[civ_id]["pop"] += int(pop.group(1))
                 elif "Outdoor" in line:
                     break
 
@@ -356,26 +366,40 @@ def generate(folder):
                 defender = int(d_coll[e]["defender_ent_id"])  
                 if agressor in active_wars:
                     active_wars[agressor].append(defender)
-                else:
+                elif defender in active_wars:
                     active_wars[defender].append(agressor)
+                else:
+                    active_wars[agressor] = []
+                    active_wars[agressor].append(defender)
         
         for key in active_wars:
             active_wars[key] = set(active_wars[key])
 
-    color = palette_dict["extra"]
-    bathy_color = (color[0][2]*0.9,color[0][1]*0.9,color[0][0]*0.9)
-    print("Beginning extra map generation")
-    yx = (1131,1524)
+    parameters = {
+        "maps": maps,
+        "worldtransname": worldtransname,
+        "worldname": worldname,
+        "d_sites": d_sites,
+        "occ_sites": occ_sites,
+        "ents": ents,
+        "active_wars": active_wars
+    }
+
+    return parameters
+
+
+def draw_elevation(elevation_file, color):
+    """
+    Draw the elevation
+    """
     print("Drawing elevation...")
-    elevation = cv.imread(maps["el"],cv.IMREAD_COLOR)
+    elevation = cv.imread(elevation_file,cv.IMREAD_COLOR)
     elevation = blue_conversion(elevation)
-    
     grey = np.uint8(cv.cvtColor(elevation, cv.COLOR_BGR2GRAY))
 
-    #print("Elevation ranges from",np.amin(grey),"to",np.amax(grey))
     canv = np.ones(grey.shape,np.uint8)       
     canv = cv.merge([canv*color[0][2],canv*color[0][1],canv*color[0][0]])
-    
+
     t = []
     kernel = np.ones((3, 3), 'uint8')
     for i in range(256):
@@ -389,6 +413,36 @@ def generate(folder):
             canv = cv.bitwise_and(canv,canv,mask = cv.bitwise_not(thresh))
             cols = cv.merge([thresh/255*col[2],thresh/255*col[1],thresh/255*col[0]])
             canv = cv.add(canv, np.uint8(cols))
+
+    return canv
+
+
+def generate_map(parameters, color_name):
+    """
+    Function to generate maps
+    """
+
+    maps = parameters.get("maps")
+    worldtransname = parameters.get("worldtransname")
+    worldname = parameters.get("worldname")
+    d_sites = parameters.get("d_sites")
+    occ_sites = parameters.get("occ_sites")
+    ents = parameters.get("ents")
+    active_wars = parameters.get("active_wars")
+
+    # OpenCV
+    color = palette_dict[color_name]
+    bathy_color = (color[0][2]*0.9,color[0][1]*0.9,color[0][0]*0.9)
+
+    print(f"Beginning { color_name } map generation")
+
+    canv = draw_elevation(maps["el"], color)
+
+    cv.namedWindow("wat", flags=cv.WINDOW_NORMAL)
+    cv.resizeWindow("wat", 800, 600)
+    cv.imshow("wat",canv)
+    cv.waitKey(0)
+    cv.destroyAllWindows()
     
     print("Drawing topology...")
     for i,x in color.items():
@@ -509,6 +563,7 @@ def generate(folder):
         delauny = np.zeros(elevation.shape, dtype="uint8")
         pts = []
         rulers = []
+
         for s in occ_sites:#d_sites:
             if "ruler" in occ_sites[s] and int(occ_sites[s]["ruler"]) >= 0 and occ_sites[s]["ruler"] in ents:
                 ((x1,y1),(x2,y2)) = d_sites[s]["rect"]
@@ -537,7 +592,7 @@ def generate(folder):
                     ifacet_arr.append(f)
 
                 ifacet = np.array(ifacet_arr, np.intc)
-                color = (rulers[i],rulers[i],rulers[i])#ent_colors[rulers[i]]
+                color = (rulers[i],rulers[i],rulers[i])
 
                 cv.fillConvexPoly(img, ifacet, color, cv.LINE_4, 0);
                 #ifacets = np.array([ifacet])
@@ -549,12 +604,12 @@ def generate(folder):
         facets = []
         for i in range(0,max(rulers)+1):
             vp = np.zeros(veg.shape, dtype="uint8")
-            vp[np.where((delauny==[i,i,i]).all(axis=2))] = [255]#ent_colors[i]
+            vp[np.where((delauny==[i,i,i]).all(axis=2))] = [255]#entity_colors[i]
             facets.append(vp)
 
         #    terr = cv.bitwise_and(vp,vp,mask=t[73])
         #    terr_top = cv.bitwise_and(canv,canv,mask=terr)
-        #    terr_overlay = np.ones(img.shape,dtype="uint8")*[ent_colors[i][2],ent_colors[i][1],ent_colors[i][0]]
+        #    terr_overlay = np.ones(img.shape,dtype="uint8")*[entity_colors[i][2],entity_colors[i][1],entity_colors[i][0]]
         #    terr_overlay = cv.bitwise_and(terr_overlay,terr_overlay,mask=terr).astype(np.uint8)
         #    terr_top = cv.addWeighted(terr_top,1-terr_alpha,terr_overlay,terr_alpha,0)
         #    canv = cv.bitwise_and(canv,canv,mask=cv.bitwise_not(terr))
@@ -613,10 +668,10 @@ def generate(folder):
         
             terr = cv.bitwise_and(terr,terr, mask = t[73])
             terr_top = cv.bitwise_and(canv,canv,mask=terr)
-            if i >= len(ent_colors):
-                print("Error: Not enough colors in ent_colors")
-                i = i % len(ent_colors)
-            terr_overlay = np.ones(elevation.shape,dtype="uint8")*[ent_colors[i][2],ent_colors[i][1],ent_colors[i][0]]
+            if i >= len(entity_colors):
+                print("Error: Not enough colors in entity_colors")
+                i = i % len(entity_colors)
+            terr_overlay = np.ones(elevation.shape,dtype="uint8")*[entity_colors[i][2],entity_colors[i][1],entity_colors[i][0]]
             terr_overlay = cv.bitwise_and(terr_overlay,terr_overlay,mask=terr).astype(np.uint8)
         
             terr_top = cv.addWeighted(terr_top,1-terr_alpha,terr_overlay,terr_alpha,0)
@@ -644,9 +699,9 @@ def generate(folder):
                     inter = cv.bitwise_and(disp[i],disp[j])
                     m = cv.countNonZero(inter)
                 if m > 0:
-                    if i >= len(ent_colors):
-                        i = i % len(ent_colors)
-                    overlay = np.ones(elevation.shape,dtype="uint8")*[ent_colors[i][2],ent_colors[i][1],ent_colors[i][0]]
+                    if i >= len(entity_colors):
+                        i = i % len(entity_colors)
+                    overlay = np.ones(elevation.shape,dtype="uint8")*[entity_colors[i][2],entity_colors[i][1],entity_colors[i][0]]
                     mask = cv.bitwise_and(inter,diag)
                     overlay = cv.bitwise_and(overlay,overlay,mask=mask).astype(np.uint8)
                         
@@ -654,10 +709,10 @@ def generate(folder):
                     for d in range(0,2*maxx,len(terrs)*(diag_width+diag_space)):
                         cv.line(eiag,(maxy,d-maxx+j*(diag_width+diag_space)),(0,d+j*(diag_width+diag_space)),(255),diag_width)
                     
-                    if j >= len(ent_colors):
-                        j = j % len(ent_colors)
+                    if j >= len(entity_colors):
+                        j = j % len(entity_colors)
         
-                    everlay = np.ones(elevation.shape,dtype="uint8")*[ent_colors[j][2],ent_colors[j][1],ent_colors[j][0]]
+                    everlay = np.ones(elevation.shape,dtype="uint8")*[entity_colors[j][2],entity_colors[j][1],entity_colors[j][0]]
                     emask = cv.bitwise_and(inter,eiag)
                     everlay = cv.bitwise_and(everlay,everlay,mask=emask).astype(np.uint8)
                     
@@ -690,10 +745,10 @@ def generate(folder):
         
             edges = cv.bitwise_and(edges,edges,mask=t[73])
         
-            if i >= len(ent_colors):
-                i = i % len(ent_colors)
+            if i >= len(entity_colors):
+                i = i % len(entity_colors)
         
-            overlay = np.ones(elevation.shape,dtype="uint8")*[ent_colors[i][2],ent_colors[i][1],ent_colors[i][0]]
+            overlay = np.ones(elevation.shape,dtype="uint8")*[entity_colors[i][2],entity_colors[i][1],entity_colors[i][0]]
             overlay = cv.bitwise_and(overlay,overlay,mask=edges).astype(np.uint8)
             canv = cv.bitwise_and(canv,canv,mask=cv.bitwise_not(edges))
             canv = cv.add(canv,overlay)
@@ -1059,7 +1114,7 @@ def generate(folder):
     titlesize = (titlebox[2] - titlebox[0], titlebox[3] - titlebox[1])
     subbox = draw.textbbox((0,0), worldname, subtitlefont)
     subsize = (subbox[2] - subbox[0], subbox[3] - subbox[1])
-    if title_align == "":
+    """if title_align == "":
         n = 999
         for i in ["tl","tr","bl","br"]:
             titlebox = np.zeros(veg.shape, dtype="uint8")
@@ -1092,7 +1147,7 @@ def generate(folder):
                 n = m
                 title_align = i
         print("Autotitle in", title_align)
-    
+    """
     #titlesize = (max(titlesize[0],subsize[0]),titlesize[1])
     
     if title_align == "tm":
@@ -1130,7 +1185,7 @@ def generate(folder):
     im.show()
     print("Saving to file...")
     output_path = "Maps/"
-    im.save(f"{output_path}{worldtransname} - extra.png")
+    im.save(f"{output_path}{worldtransname} - { color_name }.png")
     print("---------------------------")
     print(f"All maps generated for {worldtransname}")
     print("---------------------------")
@@ -1246,18 +1301,25 @@ if __name__ == "__main__":
                     description=DESCRIPTION,
                     )
 
-    parser.add_argument('-d', '--debug', action='store_true')
-    parser.add_argument('-g', '--grid', action='store_true')
+    parser.add_argument('-d', '--debug', action='store_true',
+                        help='enable debug mode')
+    parser.add_argument('-g', '--grid', action='store_true',
+                        help='Draw grid')
+    parser.add_argument('-c', '--colors', nargs='*', default='all',
+                        help='list of color palettes, enter "all" if you want \
+                          to use all palettes, default is all available')
     args = parser.parse_args()
 
 
     DEBUG = args.debug
     grid_draw = args.grid
+    color_folder = COLORS_FOLDER
+    colors = args.colors
 
     if DEBUG:
         print(f"OpenCV Version: { cv.__version__ }")
 
-    folders = os.listdir(ROOT_PATH)
+    folders = listdir(ROOT_PATH)
 
     # TODO: confirm with Myckou what is the "complete" flow
     if "Complete" in folders:
@@ -1266,9 +1328,19 @@ if __name__ == "__main__":
     if folders == []:
         print("No map data folders present.")
 
+    palette_dict = read_colors(color_folder)
+    if colors == "all":
+        colors = list(palette_dict.keys())
+
     canv = None
     for f in folders:
-        canv = generate(f)
+        parameters = generate_parameters(f)
+        gc.collect()
+        for color_name in colors:
+            if color_name in palette_dict.keys():
+                canv = generate_map(parameters, color_name)
+            else:
+                print(f"{ color_name } not found! Skipping color!")
 
     if DEBUG and canv:
         cv.imshow("wat",canv)
