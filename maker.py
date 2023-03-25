@@ -392,21 +392,21 @@ def scan_folder(folder_path):
 
     files = os.listdir(folder_path)
 
-    layer_files = {}
+    maps = {}
 
     for file in files:
         if ".bmp" in file:
             match = re.search(r"([^-]*)\.bmp", file)
             if match:
-                layer_files[match.group(1)] = folder_path + file
+                maps[match.group(1)] = folder_path + file
         elif "legends.xml" in file:
             legends_file = folder_path + file
         elif "pops.txt" in file:
-            pops_file = folder_path + file
+            pops = folder_path + file
         elif "world_history.txt" in file:
-            world_history_file = folder_path + file
+            world_history = folder_path + file
 
-    tree = ET.ElementTree(legends_file)
+    tree = ET.parse(legends_file)
 
     legends = {
         "regions": tree.find("regions"),
@@ -416,7 +416,7 @@ def scan_folder(folder_path):
         "historical_event_collections": tree.find("historical_event_collections")
     }
 
-    return layer_files, legends, pops_file, world_history_file
+    return maps, legends, pops, world_history
 
 
 def parse_regions(regions):
@@ -435,6 +435,9 @@ def parse_regions(regions):
 
 #%%GENERATION BEGIN
 def generate():
+    """
+    General function to generate maps
+    """
     folders = os.listdir(ROOT_PATH)
 
     # TODO: confirm with Myckou what is the "complete" flow
@@ -450,14 +453,14 @@ def generate():
         folder_path = ROOT_PATH + folder + "/"
 
         print("Parsing files...")
-        fn, ro, pops, wh = scan_folder(folder_path)
+        maps, legends, pops, world_history = scan_folder(folder_path)
 
-        regions = ro["regions"]
-        sites = ro["sites"]
-        entities = ro["entities"]
-        hevent = ro["historical_events"]
-        hcoll = ro["historical_event_collections"]
-        
+        regions = legends["regions"]
+        sites = legends["sites"]
+        entities = legends["entities"]
+        hevent = legends["historical_events"]
+        hcoll = legends["historical_event_collections"]
+
         d_regions = parse_regions(regions)
         d_sites = {}
         d_entities = {}
