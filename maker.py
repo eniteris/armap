@@ -290,7 +290,6 @@ def generate_parameters(folder):
         civ_id = None  # will use the civ id as a flag
         with open(pops, 'r', encoding='cp850', errors='ignore') as file:
             for line in file:
-                site = civ = parent = pop = None
                 site = re.match(r'(\d+): ([^,]+), "([^,]+)", ([^,\n]+)', line)
                 civ = re.match(r'(?:\t)Owner: ([^,]+), (\w+)', line)
                 parent = re.match(r'(?:\t)Parent Civ: ([^,]+), (\w+)', line)
@@ -373,6 +372,7 @@ def generate_parameters(folder):
         "world_translated_name": world_translated_name,
         "world_name": world_name,
         "d_sites": d_sites,
+        "d_regions": d_regions,
         "occ_sites": occ_sites,
         "entities": entities,
         "active_wars": active_wars
@@ -523,8 +523,6 @@ def draw_water(water_file, vegetation_file, color, canv):
 
 def draw_territory(parameters, canv, ground, kernel):
     maps = parameters.get("maps")
-    world_translated_name = parameters.get("world_translated_name")
-    world_name = parameters.get("world_name")
     d_sites = parameters.get("d_sites")
     occ_sites = parameters.get("occ_sites")
     entities = parameters.get("entities")
@@ -533,7 +531,6 @@ def draw_territory(parameters, canv, ground, kernel):
     veg = cv.imread(maps["veg"], cv.IMREAD_GRAYSCALE)
     (maxx, maxy) = veg.shape
     print("Drawing territories...")
-    i = 0
     k = cv.getStructuringElement(cv.MORPH_ELLIPSE, (15, 15))
 
     # VORONOI TERRITORY 2 ELECTRIC BOOGALGOO
@@ -583,7 +580,6 @@ def draw_territory(parameters, canv, ground, kernel):
         vp[np.where((delauny == [i, i, i]).all(axis=2))] = [255]  # entity_colors[i]
         facets.append(vp)
 
-    i = 0
     terrs = []
     disp = []
     for e in entities:
@@ -660,7 +656,7 @@ def draw_territory(parameters, canv, ground, kernel):
         diag = np.zeros(veg.shape, dtype="uint8")
         for d in range(0, 2 * maxx, len(disp) * (diag_width + diag_space)):
             cv.line(diag, (maxy, d - maxx + i * (diag_width + diag_space)), (0, d + i * (diag_width + diag_space)),
-                    (255), diag_width)
+                    255, diag_width)
 
         for j, uerr in enumerate(disp):
             c2 = int(list(entities)[j])
@@ -679,7 +675,7 @@ def draw_territory(parameters, canv, ground, kernel):
                 eiag = np.zeros(veg.shape, dtype="uint8")
                 for d in range(0, 2 * maxx, len(terrs) * (diag_width + diag_space)):
                     cv.line(eiag, (maxy, d - maxx + j * (diag_width + diag_space)),
-                            (0, d + j * (diag_width + diag_space)), (255), diag_width)
+                            (0, d + j * (diag_width + diag_space)), 255, diag_width)
 
                 if j >= len(entity_colors):
                     j = j % len(entity_colors)
@@ -798,7 +794,8 @@ def generate_map(parameters, color_name):
         # print("Drawing villages...")
         # village = cv.dilate(village, kernel, iterations=2)
         # village = cv.erode(village, kernel, iterations=1)
-        # vill_overlay = cv.merge([np.uint8(village/255*vill_color[2]),np.uint8(village/255*vill_color[1]),np.uint8(village/255*vill_color[0])])
+        # vill_overlay = cv.merge([np.uint8(village/255*vill_color[2]),
+        #   np.uint8(village/255*vill_color[1]),np.uint8(village/255*vill_color[0])])
         # vill_top = cv.bitwise_and(canv,canv,mask=village)
         # vill_top = cv.addWeighted(vill_top,1-vill_alpha,vill_overlay,vill_alpha,0)
         # canv = cv.bitwise_and(canv,canv,mask=cv.bitwise_not(village))
@@ -885,7 +882,7 @@ def generate_map(parameters, color_name):
         cnt, hierarchy = cv.findContours(path, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
         clen = len(cnt)
         clon = -1
-        if process_road == False:
+        if not process_road:
             clon = clen
         for it in range(math.ceil(math.sqrt(clen))):
             holes = []
@@ -912,7 +909,7 @@ def generate_map(parameters, color_name):
                 if dist < 32:
                     holes.append((a, b))
             for h in holes:
-                cv.line(path, h[0], h[1], (255), 1)
+                cv.line(path, h[0], h[1], 255, 1)
         #    cv.imshow("l",path)
         #    cv.waitKey(1)
 
@@ -1014,7 +1011,7 @@ def generate_map(parameters, color_name):
                 marquee.append(s)
 
         for s in d_sites:
-            if (d_sites[s]["type"] in bigprint + medprint + smallprint or d_sites[s]["name"] in mandatory_cities):
+            if d_sites[s]["type"] in bigprint + medprint + smallprint or d_sites[s]["name"] in mandatory_cities:
                 ((x1, y1), (x2, y2)) = d_sites[s]["rect"]
                 x = int((int(x1) + int(x2)) / 2)
                 y = int((int(y1) + int(y2)) / 2)
@@ -1069,12 +1066,12 @@ def generate_map(parameters, color_name):
             if x < maxx - textsize[0] - text_offset[0]:
                 anchor = "lm"
                 cv.rectangle(testlap, (x + text_offset[0], int(y + textsize[1] / 2 + textsize2[1])),
-                             (x + text_offset[0] + textsize[0], int(y - textsize[1] / 2)), (255), -1)
+                             (x + text_offset[0] + textsize[0], int(y - textsize[1] / 2)), 255, -1)
             else:
                 print(d_sites[s]["name"], "reversed.")
                 anchor = "rm"
                 cv.rectangle(testlap, (x - textsize[0] - text_offset[0], int(y + textsize[1] / 2 + textsize2[1])),
-                             (x - text_offset[0], int(y - textsize[1] / 2)), (255), -1)
+                             (x - text_offset[0], int(y - textsize[1] / 2)), 255, -1)
 
             if cv.countNonZero(cv.bitwise_and(testlap, overlap)) > 0:
                 print(d_sites[s]["name"], "label clash")
