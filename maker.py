@@ -745,6 +745,7 @@ def generate_map(parameters, color_name):
     # OpenCV
     color = palette_dict[color_name]
     veg = cv.imread(maps["veg"], cv.IMREAD_GRAYSCALE)
+    (maxx, maxy) = veg.shape
 
     print(f"Beginning {color_name} map generation")
 
@@ -1106,7 +1107,6 @@ def generate_map(parameters, color_name):
                           color=label_color, anchor="ma")
             im.alpha_composite(back)
 
-    (maxx, maxy) = veg.shape
     back = Image.new("RGBA", (maxx, maxy))
     draw = ImageDraw.Draw(back)
 
