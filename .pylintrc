@@ -31,6 +31,7 @@ disable=
     C0114, # imports-doc-string
     C0206, # use dict items
     E1101, # no-member
+    W1514, # unspecified encoding
     invalid-name,
     multiple-statements,
     fixme,

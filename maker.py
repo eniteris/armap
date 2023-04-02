@@ -1,15 +1,14 @@
-from os import listdir
-import re
 import argparse
-from configparser import ConfigParser
 import math
+import re
 import xml.etree.ElementTree as ElementTree
+from configparser import ConfigParser
+import os
 
 import cv2 as cv
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
-DEBUG = False
 DEFAULT_COLORS_FOLDER = "resources/color-palettes/"
 DEFAULT_FONT = "resources/DF-Curses-8x12.ttf"
 DEFAULT_MAPS_PATH = "maps/"
@@ -107,6 +106,17 @@ def test_image(img):
     cv.waitKey(0)
 
 
+def display(img):
+    cv.namedWindow('output', cv.WINDOW_NORMAL)
+    cv.imshow('output', img)
+    while True:
+        key = cv.waitKey(500)
+        if key > 0:
+            break
+    cv.destroyWindow('output')
+    return
+
+
 def blue_conversion(img):
     """
     TODO: add a description for this function
@@ -121,19 +131,26 @@ def blue_conversion(img):
 
 def read_colors(folder=DEFAULT_COLORS_FOLDER):
     """
-    Read the colors from a folder
+    Read the colors from a folder.
+
+    Args:
+        folder (str): The path to the folder containing the color palettes.
+
+    Returns:
+        dict: A dictionary with the color palettes and their values.
     """
-    palette_dict = {}
-    color_palettes = listdir(folder)
+    palettes = {}
+    color_palettes = os.listdir(folder)
     for c in color_palettes:
         color_config = ConfigParser()
-        color_config.read(folder + c)
+        color_config.read(os.path.join(folder, c))
         color_values = {}
         for k, v in dict(color_config["COLORS"]).items():
             value = tuple(int(v.lstrip('#')[i:i + 2], 16) for i in (0, 2, 4))
             color_values.update({int(k): value})
-        palette_dict[color_config["META"]["name"]] = color_values
-    return palette_dict
+        palettes[color_config["META"]["name"]] = color_values
+
+    return palettes
 
 
 def scan_folder(folder_path):
@@ -141,10 +158,7 @@ def scan_folder(folder_path):
     Receives a folder path to scan and parse the files inside
     """
 
-    if folder_path[-1] != "/":
-        folder_path += "/"
-
-    files = listdir(folder_path)
+    files = os.listdir(folder_path)
 
     maps = {}
     legends = None
@@ -155,13 +169,13 @@ def scan_folder(folder_path):
         if ".bmp" in file:
             m = re.search(r"([^-]*)\.bmp", file)
             if m:
-                maps[m.group(1)] = folder_path + file
+                maps[m.group(1)] = os.path.join(folder_path, file)
         elif "legends.xml" in file:
-            legends = folder_path + file
+            legends = os.path.join(folder_path, file)
         elif "pops.txt" in file:
-            pops = folder_path + file
+            pops = os.path.join(folder_path, file)
         elif "world_history.txt" in file:
-            world_history = folder_path + file
+            world_history = os.path.join(folder_path, file)
 
     if not maps:
         print("Could not locate any maps file")
@@ -288,28 +302,31 @@ def generate_parameters(folder):
     if site_check:
         print("Parsing pops...")
         civ_id = None  # will use the civ id as a flag
+
+        site_pattern = re.compile(r'(\d+): ([^,]+), "([^,]+)", ([^,\n]+)')
+        civ_pattern = re.compile(r'(?:\t)Owner: ([^,]+), (\w+)')
+        parent_pattern = re.compile(r'(?:\t)Parent Civ: ([^,]+), (\w+)')
+        pop_pattern = re.compile(r'(?:\t)(\d+) (goblin.*|kobold.*|dwar(?:f|ves).*|human.*|el(?:f|ves).*)')
+
         with open(pops, 'r', encoding='cp850', errors='ignore') as file:
             for line in file:
-                site = re.match(r'(\d+): ([^,]+), "([^,]+)", ([^,\n]+)', line)
-                civ = re.match(r'(?:\t)Owner: ([^,]+), (\w+)', line)
-                parent = re.match(r'(?:\t)Parent Civ: ([^,]+), (\w+)', line)
-                pop = re.match(
-                    r'(?:\t)(\d+) (goblin.*|kobold.*|dwar(?:f|ves).*|human.*|el(?:f|ves).*)',
-                    line
-                )
+                site = site_pattern.match(line)
+                civ = civ_pattern.match(line)
+                parent = parent_pattern.match(line)
+                pop = pop_pattern.match(line)
                 if site:
                     civ_id = site.group(1)
                     d_sites[civ_id]["trans"] = site.group(2)
                 elif civ and civ_id:
-                    d_sites[civ_id]["ruler"] = list(
-                        d_entities.keys()
-                    )[list(d_entities.values()).index(civ.group(1).lower())]
+                    civ_name = civ.group(1).lower()
+                    entity_key = next((key for key, val in d_entities.items() if val == civ_name), None)
+                    d_sites[civ_id]["ruler"] = entity_key
                     d_sites[civ_id]["civ_name"] = civ.group(1)
                     d_sites[civ_id]["civ_race"] = civ.group(2)
                 elif parent and civ_id:
-                    d_sites[civ_id]["ruler"] = list(
-                        d_entities.keys()
-                    )[list(d_entities.values()).index(parent.group(1).lower())]
+                    parent_name = parent.group(1).lower()
+                    entity_key = next((key for key, val in d_entities.items() if val == parent_name), None)
+                    d_sites[civ_id]["ruler"] = entity_key
                     d_sites[civ_id]["parent_name"] = parent.group(1)
                     d_sites[civ_id]["parent_race"] = parent.group(2)
                 elif pop and civ_id:
@@ -910,68 +927,6 @@ def generate_map(parameters, color_name):
                     holes.append((a, b))
             for h in holes:
                 cv.line(path, h[0], h[1], 255, 1)
-        #    cv.imshow("l",path)
-        #    cv.waitKey(1)
-
-        '''
-        print("Drawing offramps...")
-        close = []
-        for p in pts:
-            it = -1
-            dist = 16
-            for i in range(0,len(cnt)):
-                d = -cv.pointPolygonTest(cnt[i],p,True)
-                if d < dist:
-                    dist = d
-                    it = i
-            if dist < 16:
-                close.append([p,it])
-        
-        for (p,i) in close:
-            dist = 16
-            eist = 16
-            a = -1
-            b = -1
-            e = -1
-            d = -1
-            for c in cnt[i]:
-                x1,y1 = c[0]
-                x2,y2 = p
-                d = math.sqrt((x1-x2)**2 + (y1-y2)**2)
-                if d < dist:
-                    eist = d
-                    e = a
-        
-                    dist = d
-                    a = (x1,y1)
-                    b = (x2,y2)
-                elif d < eist:
-                    eist = d
-                    e = (x1,y1)
-            if -1 in [a,b,e] or eist > 8:
-                continue
-        
-            line = np.zeros(veg.shape, dtype="uint8")
-            #dx = b[0]-a[0]
-            #dy = b[1]-a[1]
-            #cv.line(line,a,(a[0]+2*dx,a[1]+2*dy),(127),1)
-            cv.line(line,a,e,(127),1)
-            sect = cv.countNonZero(cv.bitwise_and(ag,line))
-            if sect > 5:
-                print(p,dist,eist,sect,a,b,e)
-                cv.circle(path,b, 1, (256), -1)
-                cv.imshow("E",cv.add(path,line))
-                cv.waitKey(0)
-        
-                cv.line(path,a,b,(256),1)
-                cv.line(path,b,e,(256),1)
-        '''
-
-        # for p in pts:
-        #    cv.circle(path,p, 1, (127), -1)
-
-        # cv.imshow("d",path)
-        # cv.waitKey(0)
 
         path_overlay = cv.merge([np.uint8(path / 255 * path_color[2]), np.uint8(path / 255 * path_color[1]),
                                  np.uint8(path / 255 * path_color[0])])
@@ -1144,7 +1099,6 @@ def generate_map(parameters, color_name):
     draw.text((x1, y1), world_name, font=subtitle_font, anchor="ma", color=label_color)
     im.alpha_composite(back)
 
-    im.show()
     print("Saving to file...")
     output_path = "output/"
     im.save(f"{output_path}{world_translated_name} - {color_name}.png")
@@ -1152,7 +1106,7 @@ def generate_map(parameters, color_name):
     print(f"All maps generated for {world_translated_name}")
     print("---------------------------")
 
-    return canv
+    return canv[:, :, ::-1]
 
 
 if __name__ == "__main__":
@@ -1162,43 +1116,38 @@ if __name__ == "__main__":
     )
 
     parser.add_argument('-d', '--debug', action='store_true',
-                        help='enable debug mode')
+                        default=False, help='enable debug mode')
     parser.add_argument('-g', '--grid', action='store_true',
-                        help='Draw grid')
+                        default=False, help='Draw grid')
     parser.add_argument('-c', '--colors', nargs='*', default='all',
                         help='list of color palettes, enter "all" if you want \
                           to use all palettes, default is all available')
     args = parser.parse_args()
 
-    DEBUG = args.debug
+    debug_mode = args.debug
     grid_draw = args.grid
     color_folder = DEFAULT_COLORS_FOLDER
-    colors = args.colors
+    selected_colors = args.colors
 
-    folders = listdir(DEFAULT_MAPS_PATH)
+    map_folder = os.listdir(DEFAULT_MAPS_PATH)[1]
 
-    # TODO: confirm with Myckou what is the "complete" flow
-    if "Complete" in folders:
-        folders.remove("Complete")
-
-    if not folders:
+    if not map_folder:
         print("No map data folders present.")
 
     palette_dict = read_colors(color_folder)
-    if colors == "all":
-        colors = list(palette_dict.keys())
+    if selected_colors == "all":
+        selected_colors = list(palette_dict.keys())
 
     canvas = None
-    for f in folders:
-        parameters = generate_parameters(f)
-        for color_name in colors:
-            if color_name in palette_dict.keys():
-                canvas = generate_map(parameters, color_name)
-            else:
-                print(f"{color_name} not found! Skipping color!")
+    parameters = generate_parameters(map_folder)
+    for color_name in selected_colors:
+        palette = palette_dict.get(color_name)
+        if not palette:
+            print(f"{color_name} not found! Skipping color!")
 
-    if DEBUG and canvas:
-        cv.imshow("wat", canvas)
-        cv.waitKey(0)
+        canvas = generate_map(parameters, color_name)
+
+        if debug_mode and canvas.any():
+            display(canvas)
 
     print("Done!")
