@@ -4,6 +4,7 @@
 # Except that we want included
 !.gitignore
 !.pylintrc
+!pyproject.toml
 !requirements.txt
 !README.md
 !LICENSE
