@@ -4,6 +4,7 @@ import re
 import xml.etree.ElementTree as ElementTree
 from configparser import ConfigParser
 import os
+import pathlib
 
 import cv2 as cv
 import numpy as np
@@ -13,7 +14,7 @@ DEFAULT_COLORS_FOLDER = "resources/color-palettes/"
 DEFAULT_FONT = "resources/DF-Curses-8x12.ttf"
 DEFAULT_MAPS_PATH = "maps/"
 DEFAULT_OUTPUT_PATH = "output/"
-DESCRIPTION = 'Automated map maker from Dwarf Fortress maps'
+DESCRIPTION = "Automated map maker from Dwarf Fortress maps"
 
 
 entity_colors = [
@@ -62,10 +63,10 @@ small_point = 1
 label_pcolor = (0, 0, 0)
 point_pcolor = (64, 64, 64)
 
-title_size = 300
-subtitle_size = 100
-font_size = 20
-sub_size = 14
+title_size = 30
+subtitle_size = 10
+font_size = 9
+sub_size = 7
 title_font = ImageFont.truetype(DEFAULT_FONT, title_size)
 subtitle_font = ImageFont.truetype(DEFAULT_FONT, subtitle_size)
 font = ImageFont.truetype(DEFAULT_FONT, font_size)
@@ -85,12 +86,7 @@ mandatory_cities = [x.lower() for x in mandatory_cities]
 ice_bgr = [255, 255, 255]
 desert_bgr = [175, 201, 237]
 
-brook = False
-process_road = True
-grid_draw = False
 site_check = True
-territory_check = False
-structure_check = False
 other_labels_check = False
 world_label_check = False
 veg_type = "Green"
@@ -107,13 +103,13 @@ def test_image(img):
 
 
 def display(img):
-    cv.namedWindow('output', cv.WINDOW_NORMAL)
-    cv.imshow('output', img)
+    cv.namedWindow("output", cv.WINDOW_NORMAL)
+    cv.imshow("output", img)
     while True:
         key = cv.waitKey(500)
         if key > 0:
             break
-    cv.destroyWindow('output')
+    cv.destroyWindow("output")
     return
 
 
@@ -146,7 +142,7 @@ def read_colors(folder=DEFAULT_COLORS_FOLDER):
         color_config.read(os.path.join(folder, c))
         color_values = {}
         for k, v in dict(color_config["COLORS"]).items():
-            value = tuple(int(v.lstrip('#')[i:i + 2], 16) for i in (0, 2, 4))
+            value = tuple(int(v.lstrip("#")[i:i + 2], 16) for i in (0, 2, 4))
             color_values.update({int(k): value})
         palettes[color_config["META"]["name"]] = color_values
 
@@ -295,7 +291,7 @@ def generate_parameters(folder):
     d_coll = parse_collections(collections)
 
     print("Parsing history...")
-    with open(world_history, 'r', encoding='cp850', errors='ignore') as file:
+    with open(world_history, "r", encoding="cp850", errors="ignore") as file:
         world_translated_name = file.readline().strip()
         world_name = file.readline().strip()
 
@@ -308,7 +304,7 @@ def generate_parameters(folder):
         parent_pattern = re.compile(r'(?:\t)Parent Civ: ([^,]+), (\w+)')
         pop_pattern = re.compile(r'(?:\t)(\d+) (goblin.*|kobold.*|dwar(?:f|ves).*|human.*|el(?:f|ves).*)')
 
-        with open(pops, 'r', encoding='cp850', errors='ignore') as file:
+        with open(pops, "r", encoding="cp850", errors="ignore") as file:
             for line in file:
                 site = site_pattern.match(line)
                 civ = civ_pattern.match(line)
@@ -411,7 +407,7 @@ def draw_base(elevation_file, color):
     canv = cv.merge([canv * color[0][2], canv * color[0][1], canv * color[0][0]])
 
     t = []
-    kernel = np.ones((3, 3), 'uint8')
+    kernel = np.ones((3, 3), "uint8")
     for i in range(256):
         ret, thresh = cv.threshold(grey, i, 255, cv.THRESH_BINARY)
         thresh = cv.erode(thresh, kernel, iterations=1)
@@ -514,12 +510,11 @@ def draw_biomes(biomes_file, canv):
     return canv
 
 
-def draw_water(water_file, vegetation_file, color, canv):
+def draw_water(water_file, size, color, canv):
     print("Drawing water...")
     water = cv.imread(water_file, cv.IMREAD_COLOR)
-    veg = cv.imread(vegetation_file, cv.IMREAD_GRAYSCALE)
 
-    rivers = np.zeros(veg.shape, dtype="uint8")
+    rivers = np.zeros(size, dtype="uint8")
     rivers[np.where((water == [255, 96, 0]).all(axis=2))] = [255]  # lake
     rivers[np.where((water == [255, 112, 0]).all(axis=2))] = [255]  # ocean river
     rivers[np.where((water == [255, 128, 0]).all(axis=2))] = [255]  # major river
@@ -545,15 +540,15 @@ def draw_territory(parameters, canv, ground, kernel):
     entities = parameters.get("entities")
     active_wars = parameters.get("active_wars")
 
-    veg = cv.imread(maps["veg"], cv.IMREAD_GRAYSCALE)
-    (maxx, maxy) = veg.shape
+    size = cv.imread(maps["el"], cv.IMREAD_GRAYSCALE).shape
+    (maxx, maxy) = size
     print("Drawing territories...")
     k = cv.getStructuringElement(cv.MORPH_ELLIPSE, (15, 15))
 
     # VORONOI TERRITORY 2 ELECTRIC BOOGALGOO
     elevation = cv.imread(maps["el"], cv.IMREAD_COLOR)
     elevation = blue_conversion(elevation)
-    delauny = np.zeros(elevation.shape, dtype="uint8")
+    delauny = np.zeros(size, dtype="uint8")
     pts = []
     rulers = []
 
@@ -593,14 +588,14 @@ def draw_territory(parameters, canv, ground, kernel):
 
     facets = []
     for i in range(0, max(rulers) + 1):
-        vp = np.zeros(veg.shape, dtype="uint8")
+        vp = np.zeros(size, dtype="uint8")
         vp[np.where((delauny == [i, i, i]).all(axis=2))] = [255]  # entity_colors[i]
         facets.append(vp)
 
     terrs = []
     disp = []
     for e in entities:
-        terr = np.zeros(veg.shape, dtype="uint8")
+        terr = np.zeros(size, dtype="uint8")
         occ_pts = []
         for s in occ_sites:
             if occ_sites[s]["ruler"] == e:
@@ -652,7 +647,7 @@ def draw_territory(parameters, canv, ground, kernel):
         if i >= len(entity_colors):
             print("Error: Not enough colors in entity_colors")
             i = i % len(entity_colors)
-        terr_overlay = np.ones(elevation.shape, dtype="uint8") * [entity_colors[i][2], entity_colors[i][1],
+        terr_overlay = np.ones(size, dtype="uint8") * [entity_colors[i][2], entity_colors[i][1],
                                                                   entity_colors[i][0]]
         terr_overlay = cv.bitwise_and(terr_overlay, terr_overlay, mask=terr).astype(np.uint8)
 
@@ -665,12 +660,12 @@ def draw_territory(parameters, canv, ground, kernel):
     diag_width = 1
     diag_space = 0
 
-    outerlay = np.zeros(elevation.shape, dtype="uint8")
-    outermask = np.zeros(veg.shape, dtype="uint8")
+    outerlay = np.zeros(size, dtype="uint8")
+    outermask = np.zeros(size, dtype="uint8")
     for i, terr in enumerate(terrs):
         c1 = int(list(entities)[i])
 
-        diag = np.zeros(veg.shape, dtype="uint8")
+        diag = np.zeros(size, dtype="uint8")
         for d in range(0, 2 * maxx, len(disp) * (diag_width + diag_space)):
             cv.line(diag, (maxy, d - maxx + i * (diag_width + diag_space)), (0, d + i * (diag_width + diag_space)),
                     255, diag_width)
@@ -684,12 +679,12 @@ def draw_territory(parameters, canv, ground, kernel):
             if m > 0:
                 if i >= len(entity_colors):
                     i = i % len(entity_colors)
-                overlay = np.ones(elevation.shape, dtype="uint8") * [entity_colors[i][2], entity_colors[i][1],
+                overlay = np.ones(size, dtype="uint8") * [entity_colors[i][2], entity_colors[i][1],
                                                                      entity_colors[i][0]]
                 mask = cv.bitwise_and(inter, diag)
                 overlay = cv.bitwise_and(overlay, overlay, mask=mask).astype(np.uint8)
 
-                eiag = np.zeros(veg.shape, dtype="uint8")
+                eiag = np.zeros(size, dtype="uint8")
                 for d in range(0, 2 * maxx, len(terrs) * (diag_width + diag_space)):
                     cv.line(eiag, (maxy, d - maxx + j * (diag_width + diag_space)),
                             (0, d + j * (diag_width + diag_space)), 255, diag_width)
@@ -697,7 +692,7 @@ def draw_territory(parameters, canv, ground, kernel):
                 if j >= len(entity_colors):
                     j = j % len(entity_colors)
 
-                everlay = np.ones(elevation.shape, dtype="uint8") * [entity_colors[j][2], entity_colors[j][1],
+                everlay = np.ones(size, dtype="uint8") * [entity_colors[j][2], entity_colors[j][1],
                                                                      entity_colors[j][0]]
                 emask = cv.bitwise_and(inter, eiag)
                 everlay = cv.bitwise_and(everlay, everlay, mask=emask).astype(np.uint8)
@@ -733,7 +728,7 @@ def draw_territory(parameters, canv, ground, kernel):
         if i >= len(entity_colors):
             i = i % len(entity_colors)
 
-        overlay = np.ones(elevation.shape, dtype="uint8") * [entity_colors[i][2], entity_colors[i][1],
+        overlay = np.ones(size, dtype="uint8") * [entity_colors[i][2], entity_colors[i][1],
                                                              entity_colors[i][0]]
         overlay = cv.bitwise_and(overlay, overlay, mask=edges).astype(np.uint8)
         canv = cv.bitwise_and(canv, canv, mask=cv.bitwise_not(edges))
@@ -751,21 +746,18 @@ def generate_map(parameters, color_name):
     world_translated_name = parameters.get("world_translated_name")
     world_name = parameters.get("world_name")
     d_sites = parameters.get("d_sites")
-    occ_sites = parameters.get("occ_sites")
-    entities = parameters.get("entities")
-    active_wars = parameters.get("active_wars")
 
     # OpenCV
     color = palette_dict[color_name]
-    veg = cv.imread(maps["veg"], cv.IMREAD_GRAYSCALE)
-    (maxx, maxy) = veg.shape
+    size = cv.imread(maps["el"], cv.IMREAD_GRAYSCALE).shape
+    (maxx, maxy) = size
 
     print(f"Beginning {color_name} map generation")
 
     canv, ground, kernel = draw_base(maps["el"], color)
     canv = draw_vegetation(maps["veg"], canv)
     canv = draw_biomes(maps["bm"], canv)
-    canv = draw_water(maps["hyd"], maps["veg"], color, canv)
+    canv = draw_water(maps["hyd"], size, color, canv)
 
     if territory_check:
         canv = draw_territory(parameters, canv, ground, kernel)
@@ -773,22 +765,22 @@ def generate_map(parameters, color_name):
     if structure_check:
         print("Drawing structures...")
         struct = cv.imread(maps["str"], cv.IMREAD_COLOR)
-        castle = np.zeros(veg.shape, dtype="uint8")
-        village = np.zeros(veg.shape, dtype="uint8")
-        tunnel = np.zeros(veg.shape, dtype="uint8")
-        sbridge = np.zeros(veg.shape, dtype="uint8")
-        sroad = np.zeros(veg.shape, dtype="uint8")
-        swall = np.zeros(veg.shape, dtype="uint8")
-        bridge = np.zeros(veg.shape, dtype="uint8")
-        road = np.zeros(veg.shape, dtype="uint8")
-        wall = np.zeros(veg.shape, dtype="uint8")
-        crop1 = np.zeros(veg.shape, dtype="uint8")
-        crop2 = np.zeros(veg.shape, dtype="uint8")
-        crop3 = np.zeros(veg.shape, dtype="uint8")
-        pasture = np.zeros(veg.shape, dtype="uint8")
-        meadow = np.zeros(veg.shape, dtype="uint8")
-        woodland = np.zeros(veg.shape, dtype="uint8")
-        orchard = np.zeros(veg.shape, dtype="uint8")
+        castle = np.zeros(size, dtype="uint8")
+        village = np.zeros(size, dtype="uint8")
+        tunnel = np.zeros(size, dtype="uint8")
+        sbridge = np.zeros(size, dtype="uint8")
+        sroad = np.zeros(size, dtype="uint8")
+        swall = np.zeros(size, dtype="uint8")
+        bridge = np.zeros(size, dtype="uint8")
+        road = np.zeros(size, dtype="uint8")
+        wall = np.zeros(size, dtype="uint8")
+        crop1 = np.zeros(size, dtype="uint8")
+        crop2 = np.zeros(size, dtype="uint8")
+        crop3 = np.zeros(size, dtype="uint8")
+        pasture = np.zeros(size, dtype="uint8")
+        meadow = np.zeros(size, dtype="uint8")
+        woodland = np.zeros(size, dtype="uint8")
+        orchard = np.zeros(size, dtype="uint8")
 
         castle[np.where((struct == [128, 128, 128]).all(axis=2))] = [255]  # castle
         village[np.where((struct == [255, 255, 255]).all(axis=2))] = [255]  # village
@@ -957,7 +949,7 @@ def generate_map(parameters, color_name):
     marquee = []
     im = Image.fromarray(canv[:, :, ::-1])
     im = im.convert("RGBA")
-    overlap = np.zeros(veg.shape, dtype="uint8")
+    overlap = np.zeros(size, dtype="uint8")
 
     if other_labels_check:
         ###############################
@@ -1017,7 +1009,7 @@ def generate_map(parameters, color_name):
             bbox2 = draw.textbbox((0, 0), subtext, subfont)
             textsize2 = (bbox2[2] - bbox2[0], bbox2[3] - bbox2[1])
 
-            testlap = np.zeros(veg.shape, dtype="uint8")
+            testlap = np.zeros(size, dtype="uint8")
             if x < maxx - textsize[0] - text_offset[0]:
                 anchor = "lm"
                 cv.rectangle(testlap, (x + text_offset[0], int(y + textsize[1] / 2 + textsize2[1])),
@@ -1111,21 +1103,55 @@ def generate_map(parameters, color_name):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        prog='ARMap',
+        prog="ARMap",
         description=DESCRIPTION,
     )
 
-    parser.add_argument('-d', '--debug', action='store_true',
-                        default=False, help='enable debug mode')
-    parser.add_argument('-g', '--grid', action='store_true',
-                        default=False, help='Draw grid')
-    parser.add_argument('-c', '--colors', nargs='*', default='all',
-                        help='list of color palettes, enter "all" if you want \
-                          to use all palettes, default is all available')
+    # Global parameters
+    parser.add_argument("-d", "--debug", action="store_true",
+                        default=False, help="enable debug mode")
+    parser.add_argument("-e", "--interactive", action="store_true",
+                        default=False, help="enable interactive mode")
+
+    # Creations parameters
+    parser.add_argument("-n", "--new", choices=["color", "parameters"],
+                        help="")
+    parser.add_argument("-l", "--list-colors", action="store_true",
+                        default=False, help="")
+
+    # Map creation parameters
+    parser.add_argument("-p", "--parameters", action="store",
+                        type=open, help="")
+    parser.add_argument("-c", "--colors", nargs="*", default="all",
+                        help="list of color palettes, enter 'all' if you \
+                        want to use all palettes, default is all available")
+    parser.add_argument("-f", "--font", action="store", )
+    parser.add_argument("-v", "--vegetation", choices=["default", "green"],
+                        default="default", help="")
+    parser.add_argument("-g", "--grid", action="store_true",
+                    default=False, help="Draw grid")
+    parser.add_argument("-t", "--territory", action="store_true",
+                    default=False, help="Draw territory")
+    parser.add_argument("-b", "--brook", action="store_true",
+                    default=False, help="Draw brook")
+    parser.add_argument("-s", "--structure", action="store_true",
+                    default=False, help="Draw structure")
+    parser.add_argument("-r", "--road", action="store_true",
+                default=False, help="Draw road")
+    parser.add_argument("-i", "--input", action="store",
+                    type=pathlib.Path, help="")
+    parser.add_argument("-o", "--output", action="store",
+                    type=open, help="")
+
     args = parser.parse_args()
 
     debug_mode = args.debug
     grid_draw = args.grid
+    brook = args.brook
+    process_road = args.road
+    territory_check = args.territory
+    structure_check = args.structure
+
     color_folder = DEFAULT_COLORS_FOLDER
     selected_colors = args.colors
 
