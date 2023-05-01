@@ -9,10 +9,9 @@
 !README.md
 !LICENSE
 !MANIFEST
+!armap/
 !**.py
 !**.lua
-!armap/
-!armap/**
 !docs/
 !docs/**
 !examples/
