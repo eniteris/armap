@@ -1,3 +1,4 @@
 opencv_python
 Pillow
 numpy
+tomli

@@ -8,9 +8,14 @@
 !requirements.txt
 !README.md
 !LICENSE
+!MANIFEST
 !**.py
 !**.lua
-!resources/
-!resources/**
+!armap/
+!armap/**
+!docs/
+!docs/**
 !examples/
 !examples/**
+!tests/
+!tests/**
