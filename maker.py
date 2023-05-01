@@ -2,17 +2,18 @@ import argparse
 import math
 import re
 import xml.etree.ElementTree as ElementTree
-from configparser import ConfigParser
 import os
 import pathlib
+from typing import Any
 
 import cv2 as cv
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
+import tomli
 
 DEFAULT_COLORS_FOLDER = "resources/color-palettes/"
 DEFAULT_FONT = "resources/DF-Curses-8x12.ttf"
-DEFAULT_MAPS_PATH = "maps/"
+DEFAULT_MAPS_PATH = "df-maps/"
 DEFAULT_OUTPUT_PATH = "output/"
 DESCRIPTION = "Automated map maker from Dwarf Fortress maps"
 
@@ -92,6 +93,32 @@ world_label_check = False
 veg_type = "Green"
 
 
+def read_toml(file) -> dict[str, Any] | None:
+    """Read a TOML file"""
+    try:
+        toml_dict = tomli.load(open(file, "rb"))
+    except tomli.TOMLDecodeError as e:
+        print(f"Invalid TOML:\n{ e }")
+        toml_dict = None
+    except FileNotFoundError as e:
+        print(f"File not found:\n{ e }")
+        toml_dict = None
+    except Exception as e:
+        print(f"Unexpected exception:\n{ e }")
+        toml_dict = None
+    return toml_dict
+
+
+def hex_to_rgb(hex_color : str) -> tuple[int]:
+    """Convert a color in hex format to a rbg tuple."""
+    return tuple(int(hex_color.lstrip("#")[i:i + 2], 16) for i in (0, 2, 4))
+
+
+def rgb_to_hex(rgb_color : tuple[int]) -> str:
+    """Convert a rgb tuple to a hex color representation"""
+    return '#%02x%02x%02x' % rgb_color
+
+
 def test_image(img):
     """
     TODO: add a description for this function
@@ -125,26 +152,27 @@ def blue_conversion(img):
     return img
 
 
+def convert_color(color):
+    """TODO: add description"""
+    color_values = {}
+    for k, v in color.items():
+        value = hex_to_rgb(v)
+        color_values.update({int(k): value})
+    return color_values
+
+
 def read_colors(folder=DEFAULT_COLORS_FOLDER):
-    """
-    Read the colors from a folder.
+    """Read the colors from a folder.
 
-    Args:
-        folder (str): The path to the folder containing the color palettes.
-
-    Returns:
-        dict: A dictionary with the color palettes and their values.
+    :param folder (str): The path to the folder containing the color palettes.
+    :return dict: A dictionary with the color palettes and their values.
     """
     palettes = {}
     color_palettes = os.listdir(folder)
-    for c in color_palettes:
-        color_config = ConfigParser()
-        color_config.read(os.path.join(folder, c))
-        color_values = {}
-        for k, v in dict(color_config["COLORS"]).items():
-            value = tuple(int(v.lstrip("#")[i:i + 2], 16) for i in (0, 2, 4))
-            color_values.update({int(k): value})
-        palettes[color_config["META"]["name"]] = color_values
+    for color in color_palettes:
+        file_name = os.path.join(folder, color)
+        if color_config := read_toml(file_name):
+            palettes[color_config["name"]] = convert_color(color_config["colors"])
 
     return palettes
 
