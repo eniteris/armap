@@ -19,7 +19,7 @@ def read_toml(file) -> dict[str, Any] | None:
     return toml_dict
 
 
-def hex_to_rgb(hex_color : str) -> tuple[int]:
+def hex_to_rgb(hex_color : str) -> tuple[int, int, int]:
     """Convert a color in hex format to a rbg tuple."""
     return tuple(int(hex_color.lstrip("#")[i:i + 2], 16) for i in (0, 2, 4))
 

@@ -26,16 +26,37 @@ class ConfigParser():
 
     def __init__(self) -> None:
         """Init all needed configurations from default configuration file"""
+        self.debug_mode: bool = False
+        self.interactive: bool = False
+        self.wait: float = 0.3
+        self.site_check: bool = False
+        self.territory_check: bool = False
+        self.structure_check: bool = False
+        self.process_road: bool = False
+        self.brook: bool = False
+        self.grid_draw: bool = False
+        self.world_label_check = False
+        self.other_labels_check = False
+        self.min_pop: int = 1000
+        self.min_cities: int = 5
+        self.required_cities: list = []
         self.parser = None
-        self.color_folder = DEFAULT_COLORS_FOLDER
         self.map_input_folder = DEFAULT_MAPS_PATH
+        self.color_folder = DEFAULT_COLORS_FOLDER
+        self.palette_dict = self.read_palettes(self.color_folder)
+        self.selected_colors = "all"
+        self.vegetation_type = "Green"
+        self.vegetation_green = 0.8
+        self.vegetation_alpha = 1
+
+        # TODO: increase the defaults here
 
         self.parse_file(DEFAULT_CONFIG_FILE)
 
-        #if self._config.colors == "all":
-        #    self.selected_colors = list(palette_dict.keys())
-        #else:
-        #    self.selected_colors = list(self._config.colors)
+        if self.selected_colors == "all":
+            self.selected_colors = list(self.palette_dict.keys())
+        else:
+            self.selected_colors = list(self.selected_colors)
 
     def create_parser(self) -> None:
         """Create the argument parser and add the arguments."""
@@ -44,41 +65,68 @@ class ConfigParser():
             description=DESCRIPTION,
         )
 
+        # TODO: Review args
+
         # Global parameters
-        parser.add_argument("-d", "--debug", action="store_true",
-                            default=False, help="enable debug mode")
-        parser.add_argument("-e", "--interactive", action="store_true",
-                            default=False, help="enable interactive mode")
+        parser.add_argument(
+            "-d", "--debug",
+            action="store_true",
+            default=False,
+            type=bool,
+            help="enable debug mode"
+        )
+        parser.add_argument(
+            "-e", "--interactive",
+            action="store_true",
+            default=False,
+            type=bool,
+            help="enable interactive mode"
+        )
 
         # Creations parameters
-        parser.add_argument("-n", "--new", choices=["color", "parameters"],
-                            help="")
-        parser.add_argument("-l", "--list-colors", action="store_true",
-                            default=False, help="")
+        parser.add_argument(
+            "-n", "--new",
+            action="store",
+            choices=["color", "parameters"],
+            type=str,
+            help="assistant to create new color or parameters file"
+        )
+        parser.add_argument(
+            "-l", "--list",
+            action="store",
+            choices=["color", "parameters"],
+            type=str,
+            help="list available colors"
+        )
 
         # Map creation parameters
-        parser.add_argument("-p", "--parameters", action="store",
-                            type=open, help="")
-        parser.add_argument("-c", "--colors", nargs="*", default="all",
-                            help="list of color palettes, enter 'all' if you \
-                            want to use all palettes, default is all available")
-        parser.add_argument("-f", "--font", action="store", )
-        parser.add_argument("-v", "--vegetation", choices=["default", "green"],
-                            default="default", help="")
-        parser.add_argument("-g", "--grid", action="store_true",
-                        default=False, help="Draw grid")
-        parser.add_argument("-t", "--territory", action="store_true",
-                        default=False, help="Draw territory")
-        parser.add_argument("-b", "--brook", action="store_true",
-                        default=False, help="Draw brook")
-        parser.add_argument("-s", "--structure", action="store_true",
-                        default=False, help="Draw structure")
-        parser.add_argument("-r", "--road", action="store_true",
-                    default=False, help="Draw road")
-        parser.add_argument("-i", "--input", action="store",
-                        type=pathlib.Path, help="")
-        parser.add_argument("-o", "--output", action="store",
-                        type=open, help="")
+        parser.add_argument(
+            "-p", "--parameters",
+            action="store",
+            type=str,
+            help="parameters file"
+        )
+        parser.add_argument(
+            "-c", "--colors",
+            action="store",
+            nargs="*",
+            default="all",
+            type=list,
+            help="list of color palettes, enter 'all' if you \
+            want to use all palettes, default is all available"
+        )
+        parser.add_argument(
+            "-i", "--input",
+            action="store",
+            type=str,
+            help=""
+        )
+        parser.add_argument(
+            "-o", "--output",
+            action="store",
+            type=str,
+            help=""
+        )
 
         self.parser = parser
 
@@ -91,6 +139,8 @@ class ConfigParser():
             if isinstance(v, str) and len(v) == 7 and v[0] == "#":
                 v = hex_to_rgb(v)
             setattr(self, k, v)
+
+        setattr(self, "palette_dict", self.read_palettes(self.color_folder))
 
     def parse_args(self, argv: Sequence[str]) -> None:
         """Parse the argument variables from cli to overwrite defaults."""
@@ -111,25 +161,29 @@ class ConfigParser():
 
         setattr(self, "palette_dict", self.read_palettes(self.color_folder))
 
-    def convert_color(self, color):
+    def convert_color(
+            self, colors: dict[str, str]
+        ) -> dict[int, tuple[int, int, int]]:
         """TODO: add description"""
         color_values = {}
-        for k, v in color.items():
+        for k, v in colors.items():
             value = hex_to_rgb(v)
-            color_values.update({int(k): value})
+            color_values[int(k)] = value
         return color_values
 
-    def read_palettes(self, folder) -> dict:
+    def read_palettes(
+            self, folder: str
+        ) -> dict[str, dict[int, tuple[int, int, int]]]:
         """Read the colors from a folder.
 
         :param folder (str): The path to the folder containing the color palettes.
         :return dict: A dictionary with the color palettes and their values.
         """
         palettes = {}
-        color_palettes = os.listdir(folder)
-        for color in color_palettes:
-            file_name = os.path.join(folder, color)
-            if color_config := read_toml(file_name):
-                palettes[color_config["name"]] = self.convert_color(color_config["colors"])
+        color_files = os.listdir(folder)
+        for f in color_files:
+            file_name = os.path.join(folder, f)
+            if color := read_toml(file_name):
+                palettes[color["name"]] = self.convert_color(color["colors"])
 
         return palettes

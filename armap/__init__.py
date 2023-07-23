@@ -21,6 +21,6 @@ def run_armap(argv: Sequence[str] | None = None) -> None:
     from .cli import Run as ArmapRun
 
     try:
-        ArmapRun(argv or sys.argv[1:])#.run()
+        ArmapRun(argv or sys.argv[1:]).run()
     except KeyboardInterrupt:
         sys.exit(1)

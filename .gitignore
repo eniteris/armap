@@ -10,11 +10,10 @@
 !LICENSE
 !MANIFEST
 !armap/
+!tests/
 !**.py
 !**.lua
 !docs/
 !docs/**
 !examples/
 !examples/**
-!tests/
-!tests/**
